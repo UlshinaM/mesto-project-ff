@@ -1,4 +1,4 @@
-import {cardTemplate, popupTypeImage} from './index.js';
+import {cardTemplate, popupTypeImage, popupImage, popupCaption} from './index.js';
 import {closeModal} from './modal.js';
 
 // @todo: Функция создания карточки
@@ -14,13 +14,16 @@ function creationCardFunction(cardImage, cardTitle, deleteCard, likeCard, openCa
 
     //newCardElement.querySelector('.card__delete-button').addEventListener('click', () => deleteCard(newCardElement));
     //newCardElement.querySelector('.card__like-button').addEventListener('click', (evt) => likeCard(evt.target));
-    newCardElement.addEventListener('click', (evt) => { //слушатель клика висит на всей карточке, с помощью switch сортирую, что надо сделать в зависимости от элемента, по которому произошел клик
+    newCardElement.addEventListener('click', (evt) => { //слушатель клика висит на всей карточке, с помощью switch сортируем, что надо сделать в зависимости от элемента, по которому произошел клик
         switch (evt.target.classList[0]) {
             case 'card__delete-button':
                 deleteCard(newCardElement);
                 break;
             case 'card__image':
-                openCard(popupTypeImage, closeModal, cardTitle, cardImage, `Фотография места: ${cardTitle}`);
+                popupCaption.textContent = cardTitle;
+                popupImage.src = cardImage;
+                popupImage.alt = `Фотография места: ${cardTitle}`;
+                openCard(popupTypeImage, closeModal); //передаем, какой элемент открыть, функцию закрытия окна
                 break;
             case 'card__like-button':
                 likeCard(evt.target);

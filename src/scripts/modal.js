@@ -1,34 +1,33 @@
-import {formElementNewCard, formElementEdit, handleFormSubmitEdit, handleFormSubmitNewCard} from './index.js';
-
-function openModal(popup, closing) {
+function openModal(popup) {
     popup.classList.add('popup_is-opened');
-    
-    formElementEdit.addEventListener('submit', handleFormSubmitEdit);
-    formElementNewCard.addEventListener('submit', handleFormSubmitNewCard);
 
-    popup.querySelector('.popup__close').addEventListener('click', () => closing(popup)); //слушатель на кнопку закрытия
-    
-    popup.addEventListener('click', (evt) => checkOverlayClosing(popup, evt));//слушатель на нажатие по оверлею
+    //popup.querySelector('.popup__close').addEventListener('click', checkClosingButton); //слушатель на кнопку закрытия
 
-    document.addEventListener('keydown', (evt) => checkKeyClosing(popup, evt)); //слушатель на клавишу Esc
+    //popup.addEventListener('mousedown', checkOverlayClosing);//слушатель на нажатие по оверлею
+
+    document.addEventListener('keydown', checkKeyClosing); //слушатель на клавишу Esc, если ставить где-то за пределами функции открытия модального окна будут ошибки, напрмер, единичное нажате клавиши Esc будет приводить к снятию слушателя
 };
 
 function closeModal(popup) {
     popup.classList.remove('popup_is-opened');
 };
 
-function checkOverlayClosing(popup, evtSubject) { //функция-обработчик клика по оверлею
-    const checkPopup = popup.querySelector('.popup__content');
-    if (!evtSubject.composedPath().includes(checkPopup)) { //проверяем, что на самом окне попапа событие не сработало
-        closeModal(popup);
-    }
+function checkClosingButton() {
+    closeModal(document.querySelector('.popup_is-opened'));
 };
 
-function checkKeyClosing(popup, evtSubject) { //функция-обработчик нажатия Esc
-    if (evtSubject.key === 'Escape') {
-        closeModal(popup);
+function checkOverlayClosing(evt) { //функция-обработчик клика по оверлею
+    const checkPopup = document.querySelector('.popup_is-opened .popup__content'); //из всего документа выбираем только содержимое всплывающего окошка, открытого в данный момент
+    if (!evt.composedPath().includes(checkPopup)) { //проверяем, что на содержимом попапа событие не сработало
+        closeModal(document.querySelector('.popup_is-opened'));
+    };
+};
+
+function checkKeyClosing(evt) { //функция-обработчик нажатия Esc
+    if (evt.key === 'Escape') {
+        closeModal(document.querySelector('.popup_is-opened'));
         document.removeEventListener('keydown', checkKeyClosing);
     }
 };
 
-export {openModal, closeModal};
+export {openModal, closeModal, checkClosingButton, checkOverlayClosing};

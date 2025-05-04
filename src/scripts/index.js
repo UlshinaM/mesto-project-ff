@@ -7,7 +7,7 @@ const content = document.querySelector('.content');
 const placesList = document.querySelector('.places__list');
 
 //Вывести карточки на страницу при первой загрузке
-initialCards.forEach((item) => placesList.append(creationCardFunction(item.link, item.name, deleteCardFunction, likeCardFunction, openPopupImage)));
+initialCards.forEach((item) => placesList.append(creationCardFunction(item.link, item.name, deleteCardFunction, likeCardFunction, handleOpenImage)));
 
 const popups = document.querySelectorAll('.popup'); //собираем все попапы в массив
 popups.forEach(addPopupProperties);
@@ -50,7 +50,7 @@ function openPopupTypeEdit(name, job) {
     openModal(popupTypeEdit);
 };
 
-function openPopupImage(title, link) {
+function handleOpenImage(title, link) {
     popupCaption.textContent = title;
     popupImage.src = link;
     popupImage.alt = `Фотография места: ${title}`;
@@ -69,7 +69,7 @@ function handleFormSubmitEdit(evt) {//функция сохранения пар
 
 function handleFormSubmitNewCard(evt) {//функция сохранения параметров формы "Добавить карточку"
     evt.preventDefault();
-    placesList.prepend(creationCardFunction(cardImageInput.value, cardImageTitleInput.value, deleteCardFunction, likeCardFunction, openPopupImage));
+    placesList.prepend(creationCardFunction(cardImageInput.value, cardImageTitleInput.value, deleteCardFunction, likeCardFunction, handleOpenImage));
     closeModal(evt.target.closest('.popup_type_new-card'));
     formElementNewCard.reset();
 };

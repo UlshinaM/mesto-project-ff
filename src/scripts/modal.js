@@ -1,15 +1,12 @@
 function openModal(popup) {
     popup.classList.add('popup_is-opened');
 
-    //popup.querySelector('.popup__close').addEventListener('click', checkClosingButton); //слушатель на кнопку закрытия
-
-    //popup.addEventListener('mousedown', checkOverlayClosing);//слушатель на нажатие по оверлею
-
-    document.addEventListener('keydown', checkKeyClosing); //слушатель на клавишу Esc, если ставить где-то за пределами функции открытия модального окна будут ошибки, напрмер, единичное нажате клавиши Esc будет приводить к снятию слушателя
+    document.addEventListener('keydown', checkKeyClosing); //слушатель на клавишу Esc
 };
 
 function closeModal(popup) {
     popup.classList.remove('popup_is-opened');
+    document.removeEventListener('keydown', checkKeyClosing);
 };
 
 function checkClosingButton() {
@@ -26,7 +23,6 @@ function checkOverlayClosing(evt) { //функция-обработчик кли
 function checkKeyClosing(evt) { //функция-обработчик нажатия Esc
     if (evt.key === 'Escape') {
         closeModal(document.querySelector('.popup_is-opened'));
-        document.removeEventListener('keydown', checkKeyClosing);
     }
 };
 

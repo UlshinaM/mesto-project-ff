@@ -64,7 +64,7 @@ function handleFormSubmitEdit(evt) {//функция сохранения пар
     evt.preventDefault();
     profileNameInput.textContent = nameInput.value;
     profileDescriptionInput.textContent = jobInput.value;
-    closeModal(evt.target.parentElement.parentElement);
+    closeModal(evt.target.closest('.popup_type_edit'));
 };  
 
 function handleFormSubmitNewCard(evt) {//функция сохранения параметров формы "Добавить карточку"

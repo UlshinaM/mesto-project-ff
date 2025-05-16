@@ -41,6 +41,11 @@ function hideInputError(inputError) { //надо вызвать при несо�
     errorElement.classList.remove(inputError.errorClass); //делаем текст ошибки невидимым на странице
 };
 
+function disableSubmitButton(button, configClass) {
+    button.disabled = true; //кнока некликабельна
+    button.classList.add(configClass); //делаем кнопку неактивной визуально
+};
+
 function hasInvalidInput(inputList) {
     return inputList.some((itemInputElement) => {
         return !itemInputElement.validity.valid;
@@ -49,8 +54,7 @@ function hasInvalidInput(inputList) {
 
 function checkSubmitButton(inputList, buttonElement, inactiveButtonClass) {
     if (hasInvalidInput(inputList)) {
-        buttonElement.disabled = true; //кнока некликабельна
-        buttonElement.classList.add(inactiveButtonClass); //делаем кнопку неактивной визуально
+        disableSubmitButton(buttonElement, inactiveButtonClass)
     } else {
         buttonElement.disabled = false; //кнопка кликабельна
         buttonElement.classList.remove(inactiveButtonClass); //делаем кнопку активной визуально
@@ -86,15 +90,14 @@ function clearValidation(profileForm, validationConfig) {
     const inputList = Array.from(profileForm.querySelectorAll(`${validationConfig.inputSelector}`));
 
     inputList.forEach((itemInputElement) => {
-        itemInputElement.classList.remove(validationConfig.inputErrorClass); //нижняя граница поля ввода не красная
-        
-        const errorElement = profileForm.querySelector(`.${itemInputElement.id}-error`);
-        errorElement.textContent = '';
-        errorElement.classList.remove(validationConfig.errorClass); //делаем текст ошибки невидимым на странице
+        hideInputError({input: itemInputElement,
+            inputErrorClass: validationConfig.inputErrorClass,
+            form: profileForm,
+            errorClass: validationConfig.errorClass
+        });
     });
 
-    buttonElement.disabled = true; //кнока некликабельна
-    buttonElement.classList.add(validationConfig.inactiveButtonClass); //делаем кнопку неактивной визуально
+    disableSubmitButton(buttonElement, validationConfig.inactiveButtonClass)
 };
 
 export {enableValidation, clearValidation};

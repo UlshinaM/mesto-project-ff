@@ -1,4 +1,4 @@
-import {deleteApi, putLikeCard} from './api.js';
+import {deleteApi, putLikeCard, deleteLikeCard} from './api.js';
 
 const cardTemplate = document.querySelector('#card-template').content;
 
@@ -14,28 +14,27 @@ function creationCardFunction(cardObject) {
     newCardImage.src = cardObject.imageLink;
     newCardImage.alt = `Фотография места: ${cardObject.cardTitle}`;
     newCardTitle.textContent = cardObject.cardTitle;
-    cardLikeNumber.textContent = cardObject.likeNumber;
-    cardDeleteButton.setAttribute('disabled', true);
-    cardDeleteButton.setAttribute('style', 'visibility: hidden');
+    cardLikeNumber.textContent = cardObject.likesArchive.length;
 
     if (cardObject.profileId === cardObject.cardCreatorId) {//проверяем карточку на возможность удаления
-        cardDeleteButton.removeAttribute('disabled');
-        cardDeleteButton.setAttribute('style', 'visibility: visible');
         cardDeleteButton.addEventListener('click', () => cardObject.deleteFunction({
             card: newCardElement, 
             cardId: cardObject.cardId,
             error: cardObject.errorMessage
         }));
+    } else {//если не пользователь создавал, скрываем кнопку удаления
+        cardDeleteButton.setAttribute('disabled', true);
+        cardDeleteButton.setAttribute('style', 'visibility: hidden');
     }
     
-    const DoYouLike = cardObject.likesArchive.some((item) => item._id === cardObject.profileId);
+    const doYouLike = cardObject.likesArchive.some((item) => item._id === cardObject.profileId);
 
-    if (DoYouLike) {
+    if (doYouLike) {
         cardLikeButton.classList.add('card__like-button_is-active');//если до обновления ставили лайк, добавить стиль сердечку
     };
 
     cardLikeButton.addEventListener('click', (evt) => cardObject.likeFunction({button: evt.target,
-        cardId: `likes/${cardObject.cardId}`,
+        cardId: cardObject.cardId,
         likesNumber: evt.target.closest('.card__like-group').querySelector('.card__like-number'),
         error: cardObject.errorMessage
     }));
@@ -56,28 +55,18 @@ function deleteCardFunction(cardElement) {
 
 //Функция like/dislike карточки
 function likeCardFunction(cardElement) {
-    if (!cardElement.button.classList.contains('card__like-button_is-active')) {
-        putLikeCard(cardElement)
-        .then((data) => {
-            cardElement.likesNumber.textContent = data.likes.length;
-            cardElement.button.classList.add('card__like-button_is-active');
-        })
-        .catch((err) => {
-            cardElement.error(`${err}
-Невозможно отметить "понравившимся"`);    
-        });
-    } else {
-        //disLikeCard(cardElement);
-        deleteApi(cardElement.cardId)
-        .then((data) => {
-            cardElement.button.classList.remove('card__like-button_is-active');
-            cardElement.likesNumber.textContent = data.likes.length;
-        })
-        .catch((err) => {
-            cardElement.error(`${err}
-Невозможно снять отметку "понравившееся"`);    
-        });
-    }
+    const isLiked = cardElement.button.classList.contains('card__like-button_is-active'); //булева переменная, хранящая отмечена карточка, как понравившаяся или нет
+    //ставим условие проверки наличия лайка на карточке через тернарный оператор
+    const whichLikeMethod = isLiked ? deleteLikeCard : putLikeCard;
+    whichLikeMethod(cardElement.cardId) //в зависимости от условия получаем в переменной метод либо удаления лайка карточки, либо лайка, его и вызываем
+    .then((data) => {
+        cardElement.likesNumber.textContent = data.likes.length;
+        cardElement.button.classList.toggle('card__like-button_is-active');
+    })
+    .catch((err) => {
+        cardElement.error(`${err}
+Невозможно ${isLiked ? 'снять' : 'поставить'} лайк`)
+    });
 };
 
 export {creationCardFunction, deleteCardFunction, likeCardFunction};

@@ -26,8 +26,22 @@ export const getInitialCards = () => {
     });
 };
 
+export function updateProfile(newData) {
+    return makePatchFetch({
+        linkEnd: '/users/me',
+        body: JSON.stringify(newData)
+    });
+};
+
+export function updateProfileAvatar(avatar) {
+    return makePatchFetch({
+        linkEnd: '/users/me/avatar',
+        body: JSON.stringify(avatar)
+    });
+};
+
 //экспорт запроса на внесение изменений данных профиля, в том числе и аватарки
-export const makePatchFetch = (newDataObject) => {
+const makePatchFetch = (newDataObject) => {
     return fetch (`${config.baseUrl}${newDataObject.linkEnd}`, {
         method: 'PATCH',
         headers: config.headers,
@@ -43,10 +57,7 @@ export const makePostFetch = (newDataObject) => {
     return fetch (`${config.baseUrl}/cards`, {
         method: 'POST',
         headers: config.headers,
-        body: JSON.stringify({
-            name: newDataObject.name,
-            link: newDataObject.link
-        })
+        body: JSON.stringify(newDataObject)
     })
     .then(res => {
         return checkPromiseStatus(res);
@@ -65,8 +76,8 @@ export const deleteApi = (cardId) => {
 };
 
 //экспорт запроса на сохранение лайка
-export const putLikeCard = (cardElement) => {
-    return fetch (`${config.baseUrl}/cards/${cardElement.cardId}`, {
+export const putLikeCard = (cardId) => {
+    return fetch (`${config.baseUrl}/cards/likes/${cardId}`, {
             method: 'PUT',
             headers: config.headers
     })
@@ -74,6 +85,16 @@ export const putLikeCard = (cardElement) => {
         return checkPromiseStatus(res);
     });
 };
+
+export const deleteLikeCard = (cardId) => {
+    return fetch (`${config.baseUrl}/cards/likes/${cardId}`, {
+            method: 'DELETE',
+            headers: config.headers
+    })
+    .then(res => {
+        return checkPromiseStatus(res);
+    });
+}
 
 function checkPromiseStatus(res) {
     if (res.ok) {

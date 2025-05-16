@@ -2,33 +2,7 @@ import '../pages/index.css';
 import {creationCardFunction, deleteCardFunction, likeCardFunction} from './card.js';
 import {openModal, closeModal, checkClosingButton, checkOverlayClosing} from './modal.js';
 import {enableValidation, clearValidation} from './validation.js';
-import {getProfileInfo, getInitialCards, makePatchFetch, makePostFetch} from './api.js';
-
-const showErrorMessage = (error) => {//функция вывода сообщения об ошибке, сообщение будет прятаться через ~5 секунд
-    const errorMessageElement = document.createElement('div');
-    errorMessageElement.setAttribute('style', `
-        position: absolute;
-        top: 5%;
-        left: 5%;
-        font-family: Arial;
-        background-color: #fff;
-        border-radius: 10px;
-        padding: 20px 5px;
-        color: #000;
-        font-size: 24px;
-        font-weight: 900;
-        white-space: pre;
-        text-align: center;
-        min-width: 35%;`);
-    errorMessageElement.textContent = `Произошла ошибка
-${error}`;
-
-    document.body.appendChild(errorMessageElement);
-
-    setTimeout(() => {
-        errorMessageElement.parentNode.removeChild(errorMessageElement);
-    }, 5000);
-};
+import {getProfileInfo, getInitialCards, makePostFetch, updateProfile, updateProfileAvatar} from './api.js';
 
 const content = document.querySelector('.content');
 const placesList = document.querySelector('.places__list');
@@ -39,48 +13,43 @@ const headerProfileInfo = {
     profileImage: content.querySelector('.profile__image')
 };
 
-const cardsArchiveLink = 'https://nomoreparties.co/v1/wff-cohort-39/cards';
-const myToken = 'efe03888-d184-438b-940b-b32d357d3e18';
+const showErrorMessage = (error) => {//функция вывода сообщения об ошибке, сообщение будет прятаться через ~5 секунд
+    const errorMessage = document.querySelector('#error-message-template').content;
+    const page = document.querySelector('.page');
+    const errorMessageElement = errorMessage.querySelector('.error-content').cloneNode(true);
+    const errorMessageText = errorMessageElement.querySelector('.error-message_text');
+    errorMessageText.textContent = `${error}`;
 
-function loadingProfileInfo(aboutProfile) {
-    getProfileInfo()
-    .then((data) => {
-        aboutProfile.name.textContent = data.name;
-        aboutProfile.about.textContent = data.about;
-        aboutProfile.profileImage.style.backgroundImage = `url(${data.avatar})`;
-    })
-    .catch((err) => {
-        showErrorMessage(`${err}
-Произошла ошибка при загрузке данных`);
-    });
+    page.prepend(errorMessageElement);
+    setTimeout(() => {errorMessageElement.classList.add('error-content-is-animated')}, 50);
+    setTimeout(() => {errorMessageElement.classList.remove('error-content-is-animated')}, 4500);
+    setTimeout(() => {errorMessageElement.remove()}, 5000);
 };
 
-function loadCards() {
-    Promise.all([getProfileInfo()
-        .then((data) => {const profileId = data._id; return profileId;}),//если все в порядке - получили id пользователя, если нет - топаем в .catch для всего Promise.all
-        getInitialCards()])
-    .then((data) => {
-        data[1].forEach((cardObject) => placesList.append(creationCardFunction({imageLink: cardObject.link,
+function loadProfileAndCards() {
+    Promise.all([getProfileInfo(), getInitialCards()])
+    .then(([profileData, cardsData]) => {
+        headerProfileInfo.name.textContent = profileData.name;
+        headerProfileInfo.about.textContent = profileData.about;
+        headerProfileInfo.profileImage.style.backgroundImage = `url(${profileData.avatar})`;
+        cardsData.forEach((cardObject) => placesList.append(creationCardFunction({imageLink: cardObject.link,
             cardTitle: cardObject.name,
+            likesArchive: cardObject.likes,
+            profileId: profileData._id,
+            cardCreatorId: cardObject.owner._id,
+            cardId: cardObject._id,
             deleteFunction: deleteCardFunction,
             likeFunction: likeCardFunction,
             openImagePopup: handleOpenImage,
-            likesArchive: cardObject.likes,
-            likeNumber: cardObject.likes.length,
-            cardCreatorId: cardObject.owner._id,
-            profileId: data[0],
-            cardId: cardObject._id,
-            token: myToken,
-            cardsLink: cardsArchiveLink,
             errorMessage: showErrorMessage
-            })));
+        })));
     })
     .catch((err) => {showErrorMessage(`${err}
 Произошла ошибка при загрузке данных`);});
 };
+
 //выводим информацию о пользователе и список карточек
-loadingProfileInfo(headerProfileInfo);
-loadCards();
+loadProfileAndCards();
 
 const popups = document.querySelectorAll('.popup'); //собираем все попапы в массив
 popups.forEach(addPopupProperties);
@@ -114,27 +83,26 @@ const profile = document.querySelector('.profile__info'); //собираем э�
 const profileNameInput = profile.querySelector('.profile__title');
 const profileDescriptionInput = profile.querySelector('.profile__description');
 
+//Переменные с конфиг-объектами для обработки форм
+const configFormClass = {inputSelector: '.popup__input',
+        inputErrorClass: 'popup__input_type_error',
+        submitButtonSelector: '.popup__button',
+        inactiveButtonClass: 'popup__button_disabled',
+        errorClass: 'popup__error_visible',
+        formSelector: '.popup__form'
+    };
+
 //Слушатель для открытия попапов формы редактирования и добавления новой карточки. Слушатель для попапа открытия карточки навешивается при ее создании
 content.querySelector('.profile__edit-button').addEventListener('click', () => openPopupTypeEdit(profileNameInput.textContent, profileDescriptionInput.textContent));
 content.querySelector('.profile__add-button').addEventListener('click', () => {//открываем попап добавления карточки
     formElementNewCard.reset();
-    clearValidation(formElementNewCard,
-        {inputSelector: '.popup__input',
-        inputErrorClass: 'popup__input_type_error',
-        submitButtonSelector: '.popup__button',
-        inactiveButtonClass: 'popup__button_disabled',
-        errorClass: 'popup__error_visible'});
+    clearValidation(formElementNewCard, configFormClass);
     returnFormButtonSubmitStatus(popupTypeNewCard.querySelector('.popup__button'));
     openModal(popupTypeNewCard);
 });
 content.querySelector('.profile__image').addEventListener('click', () => {//открываем попап новой аватарки
     formElementEditAvatar.reset();
-    clearValidation(formElementEditAvatar,
-        {inputSelector: '.popup__input',
-        inputErrorClass: 'popup__input_type_error',
-        submitButtonSelector: '.popup__button',
-        inactiveButtonClass: 'popup__button_disabled',
-        errorClass: 'popup__error_visible'});
+    clearValidation(formElementEditAvatar, configFormClass);
     returnFormButtonSubmitStatus(popupTypeEditAvatar.querySelector('.popup__button'));    
     openModal(popupTypeEditAvatar);
 });
@@ -142,12 +110,7 @@ content.querySelector('.profile__image').addEventListener('click', () => {//от
 function openPopupTypeEdit(name, job) {//функция, открывающая попап для редактирования профиля
     nameInput.value = name;
     jobInput.value = job;
-    clearValidation(formElementEdit,
-        {inputSelector: '.popup__input',
-        inputErrorClass: 'popup__input_type_error',
-        submitButtonSelector: '.popup__button',
-        inactiveButtonClass: 'popup__button_disabled',
-        errorClass: 'popup__error_visible'});
+    clearValidation(formElementEdit, configFormClass);
     returnFormButtonSubmitStatus(popupTypeEdit.querySelector('.popup__button'));
     openModal(popupTypeEdit);
 };
@@ -176,11 +139,10 @@ function returnFormButtonSubmitStatus(button) {
 function handleFormSubmitEdit(evt) {//функция сохранения параметров формы "Редактировать профиль"
     evt.preventDefault();
     showSavingFormProcess(evt.target.querySelector('.popup__button'));
-    makePatchFetch({linkEnd: '/users/me',
-        body: JSON.stringify({
-            name: nameInput.value,
-            about: jobInput.value
-    })})
+    updateProfile({
+        name: nameInput.value,
+        about: jobInput.value
+    })
     .then(() => {
         profileNameInput.textContent = nameInput.value;
         profileDescriptionInput.textContent = jobInput.value;
@@ -195,11 +157,7 @@ function handleFormSubmitEdit(evt) {//функция сохранения пар
 function handleFormSubmitEditAvatar(evt) {//функция сохранения параметров формы "Обновить аватар"
     evt.preventDefault();
     showSavingFormProcess(evt.target.querySelector('.popup__button'));
-    makePatchFetch({linkEnd: '/users/me/avatar',
-        body: JSON.stringify({
-            avatar: avatarInput.value
-        })
-    })
+    updateProfileAvatar({avatar: avatarInput.value})
     .then(() => {
         headerProfileInfo.profileImage.style.backgroundImage = `url(${avatarInput.value})`;
     })
@@ -221,12 +179,9 @@ function handleFormSubmitNewCard(evt) {//функция сохранения п�
         likeFunction: likeCardFunction,
         openImagePopup: handleOpenImage,
         likesArchive: cardData.likes,
-        likeNumber: cardData.likes.length,
         cardCreatorId: cardData.owner._id,
         profileId: cardData.owner._id,
         cardId: cardData._id, 
-        token: myToken,
-        cardsLink: cardsArchiveLink,
         errorMessage: showErrorMessage
         }));
         
@@ -239,11 +194,4 @@ function handleFormSubmitNewCard(evt) {//функция сохранения п�
     });
 };
 
-enableValidation({//вызываем функцию для включения валидации форм на странице
-  formSelector: '.popup__form',
-  inputSelector: '.popup__input',
-  submitButtonSelector: '.popup__button',
-  inactiveButtonClass: 'popup__button_disabled',
-  inputErrorClass: 'popup__input_type_error',
-  errorClass: 'popup__error_visible'
-});
+enableValidation(configFormClass);//вызываем функцию для включения валидации форм на странице
